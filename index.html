@@ -98,7 +98,7 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
     <div class="login-logo">🏭 PLASTVIT</div>
     <div class="login-sub">Depo ve Sipariş Yönetimi</div>
     <label>Kullanıcı Adı</label>
-    <input id="loginUsername" placeholder="Kullanıcı adınız">
+    <input id="loginUsername" placeholder="Yönetici, Depo veya Üretim">
     <label>Şifre</label>
     <input id="loginPassword" type="password" placeholder="Şifreniz" onkeydown="if(event.key==='Enter') login()">
     <br><br>
@@ -702,80 +702,79 @@ if(currentUser){
 }
 refreshAll();
 
-/* ===== GİRİŞ SİSTEMİ DÜZELTME ===== */
-const PLASTVIT_DEFAULT_USERS=[
- {id:1,username:"yonetici",password:"1234",name:"Yönetici",role:"admin"},
- {id:2,username:"depo",password:"1234",name:"Depo Sorumlusu",role:"warehouse"},
- {id:3,username:"uretim",password:"1234",name:"Üretim Sorumlusu",role:"production"}
+
+/* ===== SAĞLAM GİRİŞ DÜZELTMESİ ===== */
+const LOGIN_USERS = [
+    {id:1, username:"yonetici", password:"1234", name:"Yönetici", role:"admin"},
+    {id:2, username:"depo", password:"1234", name:"Depo Sorumlusu", role:"warehouse"},
+    {id:3, username:"uretim", password:"1234", name:"Üretim Sorumlusu", role:"production"}
 ];
 
-function plastvitNormalize(s){
- return String(s||"").toLocaleLowerCase("tr-TR")
- .replace(/ı/g,"i").replace(/ü/g,"u").replace(/ş/g,"s")
- .replace(/ğ/g,"g").replace(/ö/g,"o").replace(/ç/g,"c")
- .replace(/\s+/g,"");
-}
-
-function plastvitLoadUsers(){
- const old=JSON.parse(localStorage.getItem("plastvitUsers")||"null");
- const defaults=["admin","depo","kullanici","yonetici","uretim"];
- if(!Array.isArray(old) || !old.length || old.every(u=>defaults.includes(u.username))){
-   localStorage.setItem("plastvitUsers",JSON.stringify(PLASTVIT_DEFAULT_USERS));
-   return PLASTVIT_DEFAULT_USERS;
- }
- return old;
+function normalizeLoginText(value){
+    return String(value || "")
+        .toLocaleLowerCase("tr-TR")
+        .replace(/ı/g,"i").replace(/ü/g,"u").replace(/ş/g,"s")
+        .replace(/ğ/g,"g").replace(/ö/g,"o").replace(/ç/g,"c")
+        .replace(/\s+/g,"");
 }
 
 function login(){
- const username=(document.getElementById("loginUsername")||{}).value||"";
- const password=(document.getElementById("loginPassword")||{}).value||"";
- const usersNow=plastvitLoadUsers();
- const key=plastvitNormalize(username);
- const user=usersNow.find(u=>
-   (plastvitNormalize(u.username)===key || plastvitNormalize(u.name)===key)
-   && u.password===password
- );
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value;
 
- if(!user){
-   alert("Kullanıcı adı veya şifre hatalı.");
-   return;
- }
+    const key = normalizeLoginText(username);
 
- window.currentUser={id:user.id,username:user.username,name:user.name,role:user.role};
- sessionStorage.setItem("plastvitCurrentUser",JSON.stringify(window.currentUser));
+    const user = LOGIN_USERS.find(u =>
+        (normalizeLoginText(u.username) === key ||
+         normalizeLoginText(u.name) === key) &&
+        u.password === password
+    );
 
- const overlay=document.getElementById("loginOverlay");
- if(overlay)overlay.style.display="none";
+    if(!user){
+        alert("Kullanıcı adı veya şifre hatalı.");
+        return;
+    }
 
- const hu=document.getElementById("headerUser");
- const hr=document.getElementById("headerRole");
- if(hu)hu.textContent="👤 "+user.name;
- if(hr)hr.textContent=user.name;
+    // Önemli: uygulamanın kendi currentUser değişkenini güncelle.
+    currentUser = {
+        id:user.id,
+        username:user.username,
+        name:user.name,
+        role:user.role
+    };
 
- if(typeof applyUserPermissions==="function") applyUserPermissions();
- if(typeof refreshAll==="function") refreshAll();
- alert("Hoş geldiniz, "+user.name);
+    sessionStorage.setItem("plastvitCurrentUser", JSON.stringify(currentUser));
+
+    document.getElementById("loginOverlay").style.display = "none";
+
+    if(typeof applyUserPermissions === "function"){
+        applyUserPermissions();
+    }
+
+    if(typeof refreshAll === "function"){
+        refreshAll();
+    }
 }
 
 function logout(){
- sessionStorage.removeItem("plastvitCurrentUser");
- window.currentUser=null;
- const overlay=document.getElementById("loginOverlay");
- if(overlay)overlay.style.display="flex";
+    sessionStorage.removeItem("plastvitCurrentUser");
+    currentUser = null;
+    document.getElementById("loginOverlay").style.display = "flex";
+    document.getElementById("loginUsername").value = "";
+    document.getElementById("loginPassword").value = "";
 }
 
-(function(){
- const saved=JSON.parse(sessionStorage.getItem("plastvitCurrentUser")||"null");
- if(saved){
-   window.currentUser=saved;
-   const overlay=document.getElementById("loginOverlay");
-   if(overlay)overlay.style.display="none";
-   const hu=document.getElementById("headerUser");
-   const hr=document.getElementById("headerRole");
-   if(hu)hu.textContent="👤 "+saved.name;
-   if(hr)hr.textContent=saved.name;
- }
-})();
+window.addEventListener("load", function(){
+    const saved = JSON.parse(sessionStorage.getItem("plastvitCurrentUser") || "null");
+
+    if(saved){
+        currentUser = saved;
+        document.getElementById("loginOverlay").style.display = "none";
+        if(typeof applyUserPermissions === "function") applyUserPermissions();
+    }else{
+        document.getElementById("loginOverlay").style.display = "flex";
+    }
+});
 
 </script>
 
