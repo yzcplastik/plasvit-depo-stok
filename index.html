@@ -51,13 +51,80 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
     margin-bottom:15px;
 }
 
+
+/* KULLANICI GİRİŞ VE BİLDİRİM SİSTEMİ */
+.login-overlay{
+    position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(135deg,#075f57,#123f3a);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.login-box{
+    width:min(420px,100%); background:white; border-radius:18px;
+    padding:32px; box-shadow:0 20px 60px rgba(0,0,0,.28);
+}
+.login-logo{font-size:28px;font-weight:bold;color:#075f57;text-align:center;margin-bottom:8px}
+.login-sub{text-align:center;color:#6b7280;margin-bottom:25px}
+.login-box label{display:block;font-size:13px;font-weight:bold;margin:14px 0 6px}
+.login-box input,.login-box select{margin-bottom:4px}
+.login-info{font-size:12px;color:#6b7280;margin-top:16px;line-height:1.6}
+.user-area{display:flex;align-items:center;gap:12px}
+.notify-btn{
+    position:relative;border:none;background:rgba(255,255,255,.15);color:white;
+    border-radius:8px;padding:9px 12px;cursor:pointer;font-size:17px
+}
+.notify-count{
+    position:absolute;top:-7px;right:-7px;background:#dc2626;color:white;
+    border-radius:50%;min-width:18px;height:18px;font-size:11px;
+    display:flex;align-items:center;justify-content:center;font-weight:bold
+}
+.role-badge{font-size:11px;background:#b8f0df;color:#075f57;padding:4px 8px;border-radius:20px;font-weight:bold}
+.notification-panel{
+    display:none;position:fixed;right:20px;top:78px;z-index:5000;width:min(420px,calc(100vw - 40px));
+    max-height:70vh;overflow:auto;background:white;border-radius:12px;
+    box-shadow:0 12px 40px rgba(0,0,0,.2);padding:16px
+}
+.notification-panel.show{display:block}
+.notification-item{padding:13px;border-bottom:1px solid #e5e7eb}
+.notification-item.unread{background:#eff6ff}
+.notification-time{font-size:11px;color:#6b7280;margin-top:5px}
+.logout-btn{background:#dc2626;color:white;border:none;padding:8px 11px;border-radius:7px;cursor:pointer}
+
 </style>
 </head>
 <body>
 
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🏭 PLASTVIT</div>
+    <div class="login-sub">Depo ve Sipariş Yönetimi</div>
+    <label>Kullanıcı Adı</label>
+    <input id="loginUsername" placeholder="Kullanıcı adınız">
+    <label>Şifre</label>
+    <input id="loginPassword" type="password" placeholder="Şifreniz" onkeydown="if(event.key==='Enter') login()">
+    <br><br>
+    <button class="btn btn-primary" style="width:100%" onclick="login()">Giriş Yap</button>
+    <div class="login-info">
+      İlk kullanım için örnek hesaplar:<br>
+      <b>admin / 1234</b> → Yönetici<br>
+      <b>depo / 1234</b> → Depo Sorumlusu<br>
+      <b>kullanici / 1234</b> → Kullanıcı
+    </div>
+  </div>
+</div>
+
+<div id="notificationPanel" class="notification-panel">
+  <h3 style="margin-bottom:12px">🔔 Bildirimler</h3>
+  <div id="notificationList"></div>
+</div>
+
+
 <header>
 <div class="logo">🏭 <span>PLASTVIT</span> Depo ve Stok Yönetimi</div>
-<div class="user">👤 Yönetici</div>
+<div class="user-area">
+        <button class="notify-btn" onclick="toggleNotifications()" title="Bildirimler">🔔<span id="notifyCount" class="notify-count" style="display:none">0</span></button>
+        <div class="user"><span id="headerUser">👤</span> <span id="headerRole" class="role-badge"></span></div>
+        <button class="logout-btn" onclick="logout()">Çıkış</button>
+    </div>
 </header>
 
 <div class="app">
@@ -170,7 +237,7 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
         <h2>Yeni Sipariş Oluştur</h2>
         <div class="form-grid">
             <input id="orderCustomer" placeholder="Müşteri / Firma Adı">
-            <input id="orderCreatedBy" placeholder="Siparişi Oluşturan Kullanıcı">
+            
             <select id="orderProduct"><option value="">Ürün seçin</option></select>
             <input id="orderQuantity" type="number" placeholder="Sipariş Miktarı">
             <select id="orderUnit">
@@ -446,7 +513,7 @@ function clearMovementHistory(){if(confirm("Tüm stok hareketlerini silmek istiy
 /* SİPARİŞLER - DEPO SORUMLUSU ONAY AKIŞI */
 function addOrder(){
     const customer=document.getElementById("orderCustomer").value.trim();
-    const createdBy=document.getElementById("orderCreatedBy").value.trim();
+    const createdBy=currentUser ? currentUser.name : "";
     const productId=Number(document.getElementById("orderProduct").value);
     const selectedProduct=products.find(p=>p.id===productId);
     const product=selectedProduct ? selectedProduct.name : "";
@@ -458,7 +525,8 @@ function addOrder(){
     const claw=document.getElementById("orderClaw").value;
     const note=document.getElementById("orderNote").value.trim();
 
-    if(!customer||!createdBy||!product||quantity<=0||!deliveryDate){
+    if(!currentUser){ alert("Sipariş oluşturmak için giriş yapmalısınız."); return; }
+    if(!customer||!product||quantity<=0||!deliveryDate){
         alert("Oluşturan kullanıcı, müşteri, ürün, miktar ve teslim tarihi zorunludur.");
         return;
     }
@@ -475,7 +543,7 @@ function addOrder(){
         id:Date.now(),
         createdAt:Date.now(),
         createdDate:new Date().toLocaleDateString("tr-TR"),
-        createdBy,customer,product,productId,quantity,unit,deliveryDate,
+        createdBy,createdByUserId:currentUser.id,customer,product,productId,quantity,unit,deliveryDate,
         color,profile,claw,note,
         approvalStatus:"Onay Bekliyor",
         approvedBy:"",
@@ -484,7 +552,7 @@ function addOrder(){
         notification:""
     });
 
-    ["orderCustomer","orderCreatedBy","orderQuantity","orderDeliveryDate","orderColor","orderNote"].forEach(id=>document.getElementById(id).value="");
+    ["orderCustomer","orderQuantity","orderDeliveryDate","orderColor","orderNote"].forEach(id=>document.getElementById(id).value="");
     document.getElementById("orderProduct").value="";
     document.getElementById("orderProfile").value="";
     document.getElementById("orderClaw").value="";
@@ -516,9 +584,11 @@ function renderOrders(list=orders){
         ].filter(Boolean).join("<br>")||"-";
 
         let action="";
-        if(o.approvalStatus==="Onay Bekliyor"){
+        if(o.approvalStatus==="Onay Bekliyor" && canApproveOrders()){
             action=`<button class="small-btn edit" onclick="approveOrder(${o.id})">✓ Onayla</button>
                     <button class="small-btn delete" onclick="rejectOrder(${o.id})">Reddet</button>`;
+        }else if(o.approvalStatus==="Onay Bekliyor"){
+            action=`<small class="approval-pending">Depo sorumlusu onayı bekleniyor</small>`;
         }else{
             action=`<small>${o.approvedBy?esc(o.approvedBy):"-"}<br>${o.approvalDate?esc(o.approvalDate):""}</small>`;
         }
@@ -543,21 +613,31 @@ function renderOrders(list=orders){
 }
 
 function approveOrder(id){
+    if(!canApproveOrders()){
+        alert("Sipariş onaylama yetkiniz yok.");
+        return;
+    }
     const o=orders.find(x=>x.id===id);
     if(!o)return;
-    const responsible=prompt("Depo sorumlusunun adı:", "Depo Sorumlusu");
-    if(responsible===null)return;
 
     o.approvalStatus="Onaylandı";
-    o.approvedBy=responsible.trim()||"Depo Sorumlusu";
+    o.approvedBy=currentUser.name;
     o.approvalDate=new Date().toLocaleString("tr-TR");
-    o.notification=`Siparişiniz depo sorumlusu tarafından onaylandı ve işleme alınabilir.`;
-    saveData();refreshAll();
+    o.notification="Siparişiniz depo sorumlusu tarafından onaylandı ve işleme alınabilir.";
 
-    alert(`${o.createdBy} kullanıcısına bildirim oluşturuldu: Siparişiniz onaylandı.`);
+    if(o.createdByUserId){
+        createNotification(o.createdByUserId, `✓ ${o.product} siparişiniz onaylandı. Sipariş artık işleme alınabilir.`);
+    }
+
+    saveData();refreshAll();
+    alert("Sipariş onaylandı ve siparişi veren kullanıcıya bildirim gönderildi.");
 }
 
 function rejectOrder(id){
+    if(!canApproveOrders()){
+        alert("Sipariş reddetme yetkiniz yok.");
+        return;
+    }
     const o=orders.find(x=>x.id===id);
     if(!o)return;
     const reason=prompt("Red nedeni:", "");
@@ -565,11 +645,16 @@ function rejectOrder(id){
 
     o.approvalStatus="Reddedildi";
     o.rejectionReason=reason.trim();
+    o.approvedBy=currentUser.name;
     o.approvalDate=new Date().toLocaleString("tr-TR");
-    o.notification=`Siparişiniz depo sorumlusu tarafından reddedildi.${o.rejectionReason?" Red nedeni: "+o.rejectionReason:""}`;
-    saveData();refreshAll();
+    o.notification=`Siparişiniz reddedildi.${o.rejectionReason?" Red nedeni: "+o.rejectionReason:""}`;
 
-    alert(`${o.createdBy} kullanıcısına red bildirimi oluşturuldu.`);
+    if(o.createdByUserId){
+        createNotification(o.createdByUserId, `✕ ${o.product} siparişiniz reddedildi.${o.rejectionReason?" Red nedeni: "+o.rejectionReason:""}`);
+    }
+
+    saveData();refreshAll();
+    alert("Sipariş reddedildi ve kullanıcıya bildirim gönderildi.");
 }
 
 function searchOrders(text){
@@ -612,7 +697,15 @@ function renderReports(){
 function refreshAll(){
     updateWarehouseSelects();updateProductSelects();renderWarehouses();renderProducts();renderDashboard();renderReports();renderMovements();renderOrders();saveData();
 }
-migrateData();migrateOrders();refreshAll();
+migrateData();migrateOrders();
+saveUsers();
+if(currentUser){
+    document.getElementById("loginOverlay").style.display="none";
+    applyUserPermissions();
+}else{
+    document.getElementById("loginOverlay").style.display="flex";
+}
+refreshAll();
 </script>
 
 </body>
