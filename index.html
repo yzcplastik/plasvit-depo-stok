@@ -39,6 +39,18 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 .badge-in{background:#dcfce7;color:#15803d}.badge-out{background:#fee2e2;color:#dc2626}.badge-transfer{background:#fef3c7;color:#b45309}.badge-start{background:#dbeafe;color:#1d4ed8}
 .movement-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:15px}
 @media(max-width:800px){.sidebar{width:70px;padding:15px 8px}.menu-item{font-size:0;text-align:center}.menu-item::first-letter{font-size:18px}.menu-title{display:none}.content{padding:15px}header{padding:0 15px}.logo{font-size:16px}}
+
+.approval-pending{color:#d97706;font-weight:bold}
+.approval-approved{color:#15803d;font-weight:bold}
+.approval-rejected{color:#dc2626;font-weight:bold}
+.notify-box{
+    background:#eff6ff;
+    border-left:5px solid #2563eb;
+    padding:14px 18px;
+    border-radius:8px;
+    margin-bottom:15px;
+}
+
 </style>
 </head>
 <body>
@@ -152,13 +164,14 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 
 <section id="orders" class="page">
     <h1>📝 Sipariş Yönetimi</h1>
-    <div class="subtitle">Kullanıcılar müşteri siparişlerini teslim tarihi ve ürün özellikleriyle oluşturabilir.</div>
+    <div class="subtitle">Siparişler önce depo sorumlusunun onayına gider. Onay verilmeden işleme alınmaz.</div>
 
     <div class="panel">
         <h2>Yeni Sipariş Oluştur</h2>
         <div class="form-grid">
             <input id="orderCustomer" placeholder="Müşteri / Firma Adı">
-            <input id="orderProduct" placeholder="Ürün Adı">
+            <input id="orderCreatedBy" placeholder="Siparişi Oluşturan Kullanıcı">
+            <select id="orderProduct"><option value="">Ürün seçin</option></select>
             <input id="orderQuantity" type="number" placeholder="Sipariş Miktarı">
             <select id="orderUnit">
                 <option value="ADET">ADET</option>
@@ -178,12 +191,6 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
                 <option value="Tırnaklı">Tırnaklı</option>
                 <option value="Tırnaksız">Tırnaksız</option>
             </select>
-            <select id="orderStatus">
-                <option value="Bekliyor">Bekliyor</option>
-                <option value="Üretimde">Üretimde</option>
-                <option value="Hazır">Hazır</option>
-                <option value="Teslim Edildi">Teslim Edildi</option>
-            </select>
             <textarea id="orderNote" placeholder="Ek ürün detayları / özel istekler"></textarea>
         </div>
         <br>
@@ -192,9 +199,9 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 
     <div class="cards">
         <div class="card"><div class="card-title">Toplam Sipariş</div><div class="card-value" id="totalOrders">0</div></div>
-        <div class="card"><div class="card-title">Bekleyen</div><div class="card-value" id="pendingOrders">0</div></div>
-        <div class="card"><div class="card-title">Üretimde</div><div class="card-value" id="productionOrders">0</div></div>
-        <div class="card"><div class="card-title">Teslim Edilen</div><div class="card-value" id="deliveredOrders">0</div></div>
+        <div class="card"><div class="card-title">Onay Bekleyen</div><div class="card-value" id="pendingApprovalOrders">0</div></div>
+        <div class="card"><div class="card-title">Onaylanan</div><div class="card-value" id="approvedOrders">0</div></div>
+        <div class="card"><div class="card-title">Reddedilen</div><div class="card-value" id="rejectedOrders">0</div></div>
     </div>
 
     <div class="panel">
@@ -203,8 +210,8 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
         <table>
             <thead>
                 <tr>
-                    <th>Sipariş Tarihi</th><th>Müşteri</th><th>Ürün</th><th>Miktar</th>
-                    <th>Detaylar</th><th>Teslim Tarihi</th><th>Durum</th><th>İşlem</th>
+                    <th>Sipariş Tarihi</th><th>Oluşturan</th><th>Müşteri</th><th>Ürün</th><th>Miktar</th>
+                    <th>Detaylar</th><th>Teslim Tarihi</th><th>Onay Durumu</th><th>İşlem</th>
                 </tr>
             </thead>
             <tbody id="orderTable"></tbody>
@@ -232,6 +239,14 @@ let warehouses = JSON.parse(localStorage.getItem("plastvitWarehouses")) || [
 ];
 let movements = JSON.parse(localStorage.getItem("plastvitMovements")) || [];
 let orders = JSON.parse(localStorage.getItem("plastvitOrders")) || [];
+
+function migrateOrders(){
+    orders.forEach(o=>{
+        if(!o.approvalStatus) o.approvalStatus="Onay Bekliyor";
+        if(!o.createdBy) o.createdBy="Bilinmiyor";
+        if(!("notification" in o)) o.notification="";
+    });
+}
 
 function migrateData(){
     products.forEach((p,i)=>{
@@ -361,6 +376,12 @@ function updateProductSelects(){
         const s=document.getElementById(id);if(!s)return;
         s.innerHTML='<option value="">Ürün seçin</option>'+products.map(p=>`<option value="${p.id}">${esc(p.name)} (Toplam: ${getTotalStock(p)} ${esc(p.unit)})</option>`).join("");
     });
+
+    const orderSelect=document.getElementById("orderProduct");
+    if(orderSelect){
+        orderSelect.innerHTML='<option value="">Sipariş edilecek ürünü seçin</option>'+
+            products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+    }
 }
 
 /* STOK */
@@ -422,56 +443,149 @@ function renderMovements(){
 }
 function clearMovementHistory(){if(confirm("Tüm stok hareketlerini silmek istiyor musunuz?")){movements=[];saveData();refreshAll();}}
 
-/* SİPARİŞLER */
+/* SİPARİŞLER - DEPO SORUMLUSU ONAY AKIŞI */
 function addOrder(){
     const customer=document.getElementById("orderCustomer").value.trim();
-    const product=document.getElementById("orderProduct").value.trim();
+    const createdBy=document.getElementById("orderCreatedBy").value.trim();
+    const productId=Number(document.getElementById("orderProduct").value);
+    const selectedProduct=products.find(p=>p.id===productId);
+    const product=selectedProduct ? selectedProduct.name : "";
     const quantity=Number(document.getElementById("orderQuantity").value);
     const unit=document.getElementById("orderUnit").value;
     const deliveryDate=document.getElementById("orderDeliveryDate").value;
     const color=document.getElementById("orderColor").value.trim();
     const profile=document.getElementById("orderProfile").value;
     const claw=document.getElementById("orderClaw").value;
-    const status=document.getElementById("orderStatus").value;
     const note=document.getElementById("orderNote").value.trim();
 
-    if(!customer||!product||quantity<=0||!deliveryDate){alert("Müşteri, ürün, miktar ve teslim tarihi zorunludur.");return;}
+    if(!customer||!createdBy||!product||quantity<=0||!deliveryDate){
+        alert("Oluşturan kullanıcı, müşteri, ürün, miktar ve teslim tarihi zorunludur.");
+        return;
+    }
+    if(!profile){
+        alert("Sipariş oluşması için Profilli veya Profilsiz seçimi zorunludur.");
+        return;
+    }
+    if(!claw){
+        alert("Sipariş oluşması için Tırnaklı veya Tırnaksız seçimi zorunludur.");
+        return;
+    }
 
-    orders.push({id:Date.now(),createdAt:Date.now(),createdDate:new Date().toLocaleDateString("tr-TR"),
-        customer,product,quantity,unit,deliveryDate,color,profile,claw,status,note});
+    orders.push({
+        id:Date.now(),
+        createdAt:Date.now(),
+        createdDate:new Date().toLocaleDateString("tr-TR"),
+        createdBy,customer,product,productId,quantity,unit,deliveryDate,
+        color,profile,claw,note,
+        approvalStatus:"Onay Bekliyor",
+        approvedBy:"",
+        approvalDate:"",
+        rejectionReason:"",
+        notification:""
+    });
 
-    ["orderCustomer","orderProduct","orderQuantity","orderDeliveryDate","orderColor","orderNote"].forEach(id=>document.getElementById(id).value="");
+    ["orderCustomer","orderCreatedBy","orderQuantity","orderDeliveryDate","orderColor","orderNote"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("orderProduct").value="";
     document.getElementById("orderProfile").value="";
     document.getElementById("orderClaw").value="";
-    document.getElementById("orderStatus").value="Bekliyor";
-    saveData();refreshAll();alert("Sipariş başarıyla oluşturuldu.");
+    saveData();refreshAll();
+    alert("Sipariş oluşturuldu ve depo sorumlusunun onayına gönderildi. Onay verilmeden işleme alınmayacaktır.");
 }
-function formatDate(d){if(!d)return "-";const [y,m,day]=d.split("-");return `${day}.${m}.${y}`;}
-function orderStatusSelect(o){
-    return `<select onchange="changeOrderStatus(${o.id},this.value)">
-        ${["Bekliyor","Üretimde","Hazır","Teslim Edildi"].map(s=>`<option ${o.status===s?"selected":""}>${s}</option>`).join("")}
-    </select>`;
+
+function formatDate(d){
+    if(!d)return "-";
+    const [y,m,day]=d.split("-");
+    return `${day}.${m}.${y}`;
 }
+
+function approvalBadge(status){
+    if(status==="Onaylandı") return '<span class="approval-approved">✓ Onaylandı</span>';
+    if(status==="Reddedildi") return '<span class="approval-rejected">✕ Reddedildi</span>';
+    return '<span class="approval-pending">⏳ Onay Bekliyor</span>';
+}
+
 function renderOrders(list=orders){
     const t=document.getElementById("orderTable");if(!t)return;
+
     t.innerHTML=list.length?list.sort((a,b)=>b.createdAt-a.createdAt).map(o=>{
-        const details=[o.color&&`Renk: ${esc(o.color)}`,o.profile&&esc(o.profile),o.claw&&esc(o.claw),o.note&&`Not: ${esc(o.note)}`].filter(Boolean).join("<br>")||"-";
-        return `<tr><td>${esc(o.createdDate)}</td><td><strong>${esc(o.customer)}</strong></td><td>${esc(o.product)}</td>
-        <td>${o.quantity} ${esc(o.unit)}</td><td>${details}</td><td>${formatDate(o.deliveryDate)}</td>
-        <td>${orderStatusSelect(o)}</td><td><button class="small-btn delete" onclick="deleteOrder(${o.id})">Sil</button></td></tr>`;
-    }).join(""):'<tr><td colspan="8" class="empty">Henüz sipariş bulunmuyor.</td></tr>';
+        const details=[
+            o.color&&`Renk: ${esc(o.color)}`,
+            o.profile&&esc(o.profile),
+            o.claw&&esc(o.claw),
+            o.note&&`Not: ${esc(o.note)}`
+        ].filter(Boolean).join("<br>")||"-";
+
+        let action="";
+        if(o.approvalStatus==="Onay Bekliyor"){
+            action=`<button class="small-btn edit" onclick="approveOrder(${o.id})">✓ Onayla</button>
+                    <button class="small-btn delete" onclick="rejectOrder(${o.id})">Reddet</button>`;
+        }else{
+            action=`<small>${o.approvedBy?esc(o.approvedBy):"-"}<br>${o.approvalDate?esc(o.approvalDate):""}</small>`;
+        }
+
+        return `<tr>
+            <td>${esc(o.createdDate)}</td>
+            <td><strong>${esc(o.createdBy)}</strong></td>
+            <td>${esc(o.customer)}</td>
+            <td>${esc(o.product)}</td>
+            <td>${o.quantity} ${esc(o.unit)}</td>
+            <td>${details}</td>
+            <td>${formatDate(o.deliveryDate)}</td>
+            <td>${approvalBadge(o.approvalStatus)}</td>
+            <td><div class="actions">${action}</div></td>
+        </tr>`;
+    }).join(""):'<tr><td colspan="9" class="empty">Henüz sipariş bulunmuyor.</td></tr>';
 
     document.getElementById("totalOrders").textContent=orders.length;
-    document.getElementById("pendingOrders").textContent=orders.filter(o=>o.status==="Bekliyor").length;
-    document.getElementById("productionOrders").textContent=orders.filter(o=>o.status==="Üretimde").length;
-    document.getElementById("deliveredOrders").textContent=orders.filter(o=>o.status==="Teslim Edildi").length;
+    document.getElementById("pendingApprovalOrders").textContent=orders.filter(o=>o.approvalStatus==="Onay Bekliyor").length;
+    document.getElementById("approvedOrders").textContent=orders.filter(o=>o.approvalStatus==="Onaylandı").length;
+    document.getElementById("rejectedOrders").textContent=orders.filter(o=>o.approvalStatus==="Reddedildi").length;
 }
+
+function approveOrder(id){
+    const o=orders.find(x=>x.id===id);
+    if(!o)return;
+    const responsible=prompt("Depo sorumlusunun adı:", "Depo Sorumlusu");
+    if(responsible===null)return;
+
+    o.approvalStatus="Onaylandı";
+    o.approvedBy=responsible.trim()||"Depo Sorumlusu";
+    o.approvalDate=new Date().toLocaleString("tr-TR");
+    o.notification=`Siparişiniz depo sorumlusu tarafından onaylandı ve işleme alınabilir.`;
+    saveData();refreshAll();
+
+    alert(`${o.createdBy} kullanıcısına bildirim oluşturuldu: Siparişiniz onaylandı.`);
+}
+
+function rejectOrder(id){
+    const o=orders.find(x=>x.id===id);
+    if(!o)return;
+    const reason=prompt("Red nedeni:", "");
+    if(reason===null)return;
+
+    o.approvalStatus="Reddedildi";
+    o.rejectionReason=reason.trim();
+    o.approvalDate=new Date().toLocaleString("tr-TR");
+    o.notification=`Siparişiniz depo sorumlusu tarafından reddedildi.${o.rejectionReason?" Red nedeni: "+o.rejectionReason:""}`;
+    saveData();refreshAll();
+
+    alert(`${o.createdBy} kullanıcısına red bildirimi oluşturuldu.`);
+}
+
 function searchOrders(text){
     text=text.toLowerCase();
-    renderOrders(orders.filter(o=>o.customer.toLowerCase().includes(text)||o.product.toLowerCase().includes(text)));
+    renderOrders(orders.filter(o=>
+        o.customer.toLowerCase().includes(text) ||
+        o.product.toLowerCase().includes(text) ||
+        o.createdBy.toLowerCase().includes(text)
+    ));
 }
-function changeOrderStatus(id,status){const o=orders.find(x=>x.id===id);if(o){o.status=status;saveData();refreshAll();}}
-function deleteOrder(id){if(confirm("Siparişi silmek istiyor musunuz?")){orders=orders.filter(o=>o.id!==id);saveData();refreshAll();}}
+
+/* Bu bildirim sistemi şu anda uygulama içi kayıt olarak çalışır.
+   Gerçek kişiye anlık bildirim için kullanıcı giriş sistemi gerekir. */
+function getUserNotifications(userName){
+    return orders.filter(o=>o.createdBy===userName && o.notification);
+}
 
 /* DASHBOARD / RAPOR */
 function renderDashboard(){
@@ -498,7 +612,7 @@ function renderReports(){
 function refreshAll(){
     updateWarehouseSelects();updateProductSelects();renderWarehouses();renderProducts();renderDashboard();renderReports();renderMovements();renderOrders();saveData();
 }
-migrateData();refreshAll();
+migrateData();migrateOrders();refreshAll();
 </script>
 
 </body>
