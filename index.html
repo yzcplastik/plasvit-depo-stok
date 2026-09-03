@@ -701,6 +701,82 @@ if(currentUser){
     document.getElementById("loginOverlay").style.display="flex";
 }
 refreshAll();
+
+/* ===== GİRİŞ SİSTEMİ DÜZELTME ===== */
+const PLASTVIT_DEFAULT_USERS=[
+ {id:1,username:"yonetici",password:"1234",name:"Yönetici",role:"admin"},
+ {id:2,username:"depo",password:"1234",name:"Depo Sorumlusu",role:"warehouse"},
+ {id:3,username:"uretim",password:"1234",name:"Üretim Sorumlusu",role:"production"}
+];
+
+function plastvitNormalize(s){
+ return String(s||"").toLocaleLowerCase("tr-TR")
+ .replace(/ı/g,"i").replace(/ü/g,"u").replace(/ş/g,"s")
+ .replace(/ğ/g,"g").replace(/ö/g,"o").replace(/ç/g,"c")
+ .replace(/\s+/g,"");
+}
+
+function plastvitLoadUsers(){
+ const old=JSON.parse(localStorage.getItem("plastvitUsers")||"null");
+ const defaults=["admin","depo","kullanici","yonetici","uretim"];
+ if(!Array.isArray(old) || !old.length || old.every(u=>defaults.includes(u.username))){
+   localStorage.setItem("plastvitUsers",JSON.stringify(PLASTVIT_DEFAULT_USERS));
+   return PLASTVIT_DEFAULT_USERS;
+ }
+ return old;
+}
+
+function login(){
+ const username=(document.getElementById("loginUsername")||{}).value||"";
+ const password=(document.getElementById("loginPassword")||{}).value||"";
+ const usersNow=plastvitLoadUsers();
+ const key=plastvitNormalize(username);
+ const user=usersNow.find(u=>
+   (plastvitNormalize(u.username)===key || plastvitNormalize(u.name)===key)
+   && u.password===password
+ );
+
+ if(!user){
+   alert("Kullanıcı adı veya şifre hatalı.");
+   return;
+ }
+
+ window.currentUser={id:user.id,username:user.username,name:user.name,role:user.role};
+ sessionStorage.setItem("plastvitCurrentUser",JSON.stringify(window.currentUser));
+
+ const overlay=document.getElementById("loginOverlay");
+ if(overlay)overlay.style.display="none";
+
+ const hu=document.getElementById("headerUser");
+ const hr=document.getElementById("headerRole");
+ if(hu)hu.textContent="👤 "+user.name;
+ if(hr)hr.textContent=user.name;
+
+ if(typeof applyUserPermissions==="function") applyUserPermissions();
+ if(typeof refreshAll==="function") refreshAll();
+ alert("Hoş geldiniz, "+user.name);
+}
+
+function logout(){
+ sessionStorage.removeItem("plastvitCurrentUser");
+ window.currentUser=null;
+ const overlay=document.getElementById("loginOverlay");
+ if(overlay)overlay.style.display="flex";
+}
+
+(function(){
+ const saved=JSON.parse(sessionStorage.getItem("plastvitCurrentUser")||"null");
+ if(saved){
+   window.currentUser=saved;
+   const overlay=document.getElementById("loginOverlay");
+   if(overlay)overlay.style.display="none";
+   const hu=document.getElementById("headerUser");
+   const hr=document.getElementById("headerRole");
+   if(hu)hu.textContent="👤 "+saved.name;
+   if(hr)hr.textContent=saved.name;
+ }
+})();
+
 </script>
 
 </body>
