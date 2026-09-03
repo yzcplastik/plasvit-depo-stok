@@ -55,6 +55,7 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 <button class="menu-item" onclick="showPage('stocks',this)">📦 Stoklar</button>
 <button class="menu-item" onclick="showPage('warehouses',this)">🏭 Depolar</button>
 <button class="menu-item" onclick="showPage('stockin',this)">📥 Stok Giriş</button>
+        <button class="menu-item" onclick="showPage('orders',this)">📝 Siparişler</button>
 <button class="menu-item" onclick="showPage('stockout',this)">📤 Stok Çıkış</button>
 <button class="menu-item" onclick="showPage('transfer',this)">🔄 Depo Transferi</button>
 <button class="menu-item" onclick="showPage('movements',this)">📋 Stok Hareketleri</button>
@@ -76,17 +77,44 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 <tbody id="dashboardStockTable"></tbody></table></div>
 </section>
 
-<section id="stocks" class="page">
-<h1>📦 Stok Yönetimi</h1><div class="subtitle">Ürün kartlarını ve mevcut stokları yönetin.</div>
-<div class="panel"><h2>Yeni Ürün Ekle</h2><div class="form-grid">
-<input id="productCode" placeholder="Ürün Kodu"><input id="productName" placeholder="Ürün Adı"><input id="productCategory" placeholder="Kategori">
-<select id="productUnit"><option value="ADET">ADET</option><option value="KG">KG</option><option value="TON">TON</option><option value="PALET">PALET</option></select>
-<input id="productStock" type="number" placeholder="Başlangıç Stok (seçilen depoya)"><input id="productMinStock" type="number" placeholder="Minimum Stok"><select id="productWarehouse"></select>
-</div><br><button class="btn btn-primary" onclick="addProduct()">➕ Ürün Ekle</button></div>
-<div class="panel"><h2>Ürünler</h2><input class="search" placeholder="🔍 Ürün ara..." onkeyup="searchProducts(this.value)">
-<table><thead><tr><th>Kod</th><th>Ürün</th><th>Kategori</th><th>Birim</th><th>Stok</th><th>Minimum</th><th>Depo</th><th>İşlem</th></tr></thead><tbody id="productTable"></tbody></table></div>
-</section>
 
+<section id="stocks" class="page">
+    <h1>📦 Ürün Yönetimi</h1>
+    <div class="subtitle">Ürünleri sadece ürün adıyla kolayca takip edin.</div>
+
+    <div class="panel">
+        <h2>Yeni Ürün Ekle</h2>
+        <div class="form-grid">
+            <input id="productName" placeholder="Ürün Adı">
+            <input id="productCategory" placeholder="Kategori">
+            <select id="productUnit">
+                <option value="ADET">ADET</option>
+                <option value="KG">KG</option>
+                <option value="TON">TON</option>
+                <option value="PALET">PALET</option>
+            </select>
+            <input id="productStock" type="number" placeholder="Başlangıç Stok">
+            <input id="productMinStock" type="number" placeholder="Minimum Stok">
+            <select id="productWarehouse"></select>
+        </div>
+        <br>
+        <button class="btn btn-primary" onclick="addProduct()">➕ Ürün Ekle</button>
+    </div>
+
+    <div class="panel">
+        <h2>Ürünler</h2>
+        <input class="search" placeholder="🔍 Ürün ara..." onkeyup="searchProducts(this.value)">
+        <table>
+            <thead>
+                <tr>
+                    <th>Ürün</th><th>Kategori</th><th>Birim</th><th>Toplam Stok</th>
+                    <th>Minimum</th><th>Depolara Göre Stok</th><th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="productTable"></tbody>
+        </table>
+    </div>
+</section>
 <section id="warehouses" class="page">
 <h1>🏭 Depolar</h1><div class="subtitle">Depo ve lokasyon kayıtlarını yönetin.</div>
 <div class="panel"><h2>Yeni Depo Ekle</h2><div class="form-grid"><input id="warehouseName" placeholder="Depo Adı"><input id="warehouseLocation" placeholder="Depo Konumu"></div><br><button class="btn btn-primary" onclick="addWarehouse()">➕ Depo Ekle</button></div>
@@ -121,6 +149,69 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 </div>
 </section>
 
+
+<section id="orders" class="page">
+    <h1>📝 Sipariş Yönetimi</h1>
+    <div class="subtitle">Kullanıcılar müşteri siparişlerini teslim tarihi ve ürün özellikleriyle oluşturabilir.</div>
+
+    <div class="panel">
+        <h2>Yeni Sipariş Oluştur</h2>
+        <div class="form-grid">
+            <input id="orderCustomer" placeholder="Müşteri / Firma Adı">
+            <input id="orderProduct" placeholder="Ürün Adı">
+            <input id="orderQuantity" type="number" placeholder="Sipariş Miktarı">
+            <select id="orderUnit">
+                <option value="ADET">ADET</option>
+                <option value="KG">KG</option>
+                <option value="TON">TON</option>
+                <option value="PALET">PALET</option>
+            </select>
+            <input id="orderDeliveryDate" type="date">
+            <input id="orderColor" placeholder="Renk (örn. Siyah, Beyaz, Mavi)">
+            <select id="orderProfile">
+                <option value="">Profil Tipi Seçin</option>
+                <option value="Profilli">Profilli</option>
+                <option value="Profilsiz">Profilsiz</option>
+            </select>
+            <select id="orderClaw">
+                <option value="">Tırnak Tipi Seçin</option>
+                <option value="Tırnaklı">Tırnaklı</option>
+                <option value="Tırnaksız">Tırnaksız</option>
+            </select>
+            <select id="orderStatus">
+                <option value="Bekliyor">Bekliyor</option>
+                <option value="Üretimde">Üretimde</option>
+                <option value="Hazır">Hazır</option>
+                <option value="Teslim Edildi">Teslim Edildi</option>
+            </select>
+            <textarea id="orderNote" placeholder="Ek ürün detayları / özel istekler"></textarea>
+        </div>
+        <br>
+        <button class="btn btn-primary" onclick="addOrder()">📝 Sipariş Oluştur</button>
+    </div>
+
+    <div class="cards">
+        <div class="card"><div class="card-title">Toplam Sipariş</div><div class="card-value" id="totalOrders">0</div></div>
+        <div class="card"><div class="card-title">Bekleyen</div><div class="card-value" id="pendingOrders">0</div></div>
+        <div class="card"><div class="card-title">Üretimde</div><div class="card-value" id="productionOrders">0</div></div>
+        <div class="card"><div class="card-title">Teslim Edilen</div><div class="card-value" id="deliveredOrders">0</div></div>
+    </div>
+
+    <div class="panel">
+        <h2>Sipariş Listesi</h2>
+        <input class="search" placeholder="🔍 Müşteri veya ürün ara..." onkeyup="searchOrders(this.value)">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sipariş Tarihi</th><th>Müşteri</th><th>Ürün</th><th>Miktar</th>
+                    <th>Detaylar</th><th>Teslim Tarihi</th><th>Durum</th><th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="orderTable"></tbody>
+        </table>
+    </div>
+</section>
+
 <section id="reports" class="page">
 <h1>📈 Raporlar</h1><div class="cards">
 <div class="card"><div class="card-title">Toplam Ürün</div><div class="card-value" id="reportProducts">0</div></div>
@@ -133,438 +224,282 @@ td{padding:12px;border-bottom:1px solid #e5e7eb}tr:hover{background:#f9fafb}
 </main></div>
 
 
-<script>
-/* =========================
-   PLASTVIT - DEPO BAZLI STOK SİSTEMİ
-========================= */
 
+<script>
 let products = JSON.parse(localStorage.getItem("plastvitProducts")) || [];
 let warehouses = JSON.parse(localStorage.getItem("plastvitWarehouses")) || [
     { id: Date.now(), name: "Plastvit Ana Depo", location: "Ana Merkez" }
 ];
 let movements = JSON.parse(localStorage.getItem("plastvitMovements")) || [];
+let orders = JSON.parse(localStorage.getItem("plastvitOrders")) || [];
 
-/* Eski tek-depo sistemindeki verileri yeni depo-bazlı yapıya dönüştür */
-function migrateProducts(){
-    let changed = false;
-    products.forEach(p => {
-        if(!p.stocksByWarehouse || typeof p.stocksByWarehouse !== "object"){
-            p.stocksByWarehouse = {};
-            const oldStock = Number(p.stock) || 0;
-            if(p.warehouseId) p.stocksByWarehouse[p.warehouseId] = oldStock;
-            p.stock = oldStock;
-            changed = true;
+function migrateData(){
+    products.forEach((p,i)=>{
+        if(!p.id) p.id=Date.now()+i;
+        if(!p.stocksByWarehouse || typeof p.stocksByWarehouse!=="object"){
+            p.stocksByWarehouse={};
+            const old=Number(p.stock)||0;
+            if(p.warehouseId) p.stocksByWarehouse[p.warehouseId]=old;
         }
-        Object.keys(p.stocksByWarehouse).forEach(id => {
-            p.stocksByWarehouse[id] = Number(p.stocksByWarehouse[id]) || 0;
-        });
-        p.stock = getTotalStock(p);
+        p.stock=getTotalStock(p);
     });
-    if(changed) saveData();
+    saveData();
 }
 
-function getTotalStock(product){
-    if(product.stocksByWarehouse){
-        return Object.values(product.stocksByWarehouse)
-            .reduce((sum, value) => sum + (Number(value) || 0), 0);
-    }
-    return Number(product.stock) || 0;
+function getTotalStock(p){
+    if(p.stocksByWarehouse) return Object.values(p.stocksByWarehouse).reduce((s,v)=>s+(Number(v)||0),0);
+    return Number(p.stock)||0;
+}
+function getWarehouseStock(p,id){ return Number(p.stocksByWarehouse?.[id]||0); }
+function setWarehouseStock(p,id,amount){
+    if(!p.stocksByWarehouse) p.stocksByWarehouse={};
+    p.stocksByWarehouse[id]=Math.max(0,Number(amount)||0);
+    p.stock=getTotalStock(p);
+}
+function warehouseName(id){ return warehouses.find(w=>Number(w.id)===Number(id))?.name||"-"; }
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
+function saveData(){
+    products.forEach(p=>p.stock=getTotalStock(p));
+    localStorage.setItem("plastvitProducts",JSON.stringify(products));
+    localStorage.setItem("plastvitWarehouses",JSON.stringify(warehouses));
+    localStorage.setItem("plastvitMovements",JSON.stringify(movements));
+    localStorage.setItem("plastvitOrders",JSON.stringify(orders));
 }
 
-function getWarehouseStock(product, warehouseId){
-    return Number(product.stocksByWarehouse?.[warehouseId] || 0);
-}
-
-function setWarehouseStock(product, warehouseId, amount){
-    if(!product.stocksByWarehouse) product.stocksByWarehouse = {};
-    product.stocksByWarehouse[warehouseId] = Math.max(0, Number(amount) || 0);
-    product.stock = getTotalStock(product);
-}
-
-function warehouseName(id){
-    const w = warehouses.find(x => Number(x.id) === Number(id));
-    return w ? w.name : "-";
-}
-
-function escapeHtml(value){
-    return String(value ?? "").replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
-}
-
-function formatStockByWarehouse(p){
-    const parts = warehouses
-        .map(w => {
-            const qty = getWarehouseStock(p, w.id);
-            return qty > 0 ? `${escapeHtml(w.name)}: <strong>${qty} ${escapeHtml(p.unit)}</strong>` : "";
-        })
-        .filter(Boolean);
-    return parts.length ? parts.join("<br>") : "-";
-}
-
-function showPage(pageId, button){
-    document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
-    document.getElementById(pageId).classList.add("active");
-    document.querySelectorAll(".menu-item").forEach(item => item.classList.remove("active"));
+function showPage(id,button){
+    document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    document.querySelectorAll(".menu-item").forEach(x=>x.classList.remove("active"));
     button.classList.add("active");
     refreshAll();
 }
 
-function saveData(){
-    products.forEach(p => p.stock = getTotalStock(p));
-    localStorage.setItem("plastvitProducts", JSON.stringify(products));
-    localStorage.setItem("plastvitWarehouses", JSON.stringify(warehouses));
-    localStorage.setItem("plastvitMovements", JSON.stringify(movements));
+function addMovement(type,p,amount,warehouse,note=""){
+    movements.push({id:Date.now()+Math.random(),timestamp:Date.now(),date:new Date().toLocaleString("tr-TR"),
+        type,productId:p.id,productName:p.name,amount:Number(amount),unit:p.unit,warehouse,note});
 }
 
-function addMovement(type, product, amount, warehouse, note="", extra=""){
-    movements.push({
-        id: Date.now() + Math.random(),
-        timestamp: Date.now(),
-        date: new Date().toLocaleString("tr-TR"),
-        type, productId: product.id, productCode: product.code,
-        productName: product.name, amount: Number(amount),
-        unit: product.unit, warehouse, note, extra
-    });
-}
-
+/* DEPOLAR */
 function addWarehouse(){
-    const name = document.getElementById("warehouseName").value.trim();
-    const location = document.getElementById("warehouseLocation").value.trim();
-    if(!name){ alert("Lütfen depo adı girin."); return; }
-
-    warehouses.push({ id: Date.now(), name, location });
-    saveData();
+    const name=document.getElementById("warehouseName").value.trim();
+    const location=document.getElementById("warehouseLocation").value.trim();
+    if(!name){alert("Lütfen depo adı girin.");return;}
+    warehouses.push({id:Date.now(),name,location});
     document.getElementById("warehouseName").value="";
     document.getElementById("warehouseLocation").value="";
-    refreshAll();
-    alert("Depo başarıyla eklendi.");
+    saveData();refreshAll();alert("Depo başarıyla eklendi.");
 }
-
 function renderWarehouses(){
-    const table=document.getElementById("warehouseTable");
-    table.innerHTML="";
-    if(!warehouses.length){
-        table.innerHTML='<tr><td colspan="3" class="empty">Henüz depo yok.</td></tr>';
-        return;
-    }
-    warehouses.forEach(w => {
-        const productCount = products.filter(p => getWarehouseStock(p,w.id)>0).length;
-        table.innerHTML += `<tr>
-            <td>${escapeHtml(w.name)}${productCount ? ` <small>(${productCount} ürün)</small>` : ""}</td>
-            <td>${escapeHtml(w.location||"-")}</td>
-            <td><button class="small-btn delete" onclick="deleteWarehouse(${w.id})">Sil</button></td>
-        </tr>`;
-    });
+    const t=document.getElementById("warehouseTable"); if(!t)return;
+    t.innerHTML=warehouses.length?warehouses.map(w=>`<tr><td>${esc(w.name)}</td><td>${esc(w.location||"-")}</td>
+    <td><button class="small-btn delete" onclick="deleteWarehouse(${w.id})">Sil</button></td></tr>`).join("")
+    :'<tr><td colspan="3" class="empty">Henüz depo yok.</td></tr>';
 }
-
 function deleteWarehouse(id){
-    if(products.some(p => getWarehouseStock(p,id)>0)){
-        alert("Bu depoda stok bulunduğu için depo silinemez.");
-        return;
-    }
-    if(confirm("Depoyu silmek istediğinize emin misiniz?")){
-        warehouses = warehouses.filter(w=>Number(w.id)!==Number(id));
-        products.forEach(p => {
-            if(p.stocksByWarehouse) delete p.stocksByWarehouse[id];
-        });
-        saveData(); refreshAll();
+    if(products.some(p=>getWarehouseStock(p,id)>0)){alert("Bu depoda stok olduğu için silinemez.");return;}
+    if(confirm("Depoyu silmek istiyor musunuz?")){
+        warehouses=warehouses.filter(w=>Number(w.id)!==Number(id));
+        products.forEach(p=>{if(p.stocksByWarehouse)delete p.stocksByWarehouse[id];});
+        saveData();refreshAll();
     }
 }
-
-function fillWarehouseSelect(selectId, placeholder, selectedValue=null){
-    const select=document.getElementById(selectId);
-    if(!select) return;
-    select.innerHTML = placeholder ? `<option value="">${placeholder}</option>` : "";
-    warehouses.forEach(w=>{
-        const selected = String(selectedValue)===String(w.id) ? "selected" : "";
-        select.innerHTML += `<option value="${w.id}" ${selected}>${escapeHtml(w.name)}</option>`;
-    });
+function fillWarehouse(id,placeholder){
+    const s=document.getElementById(id);if(!s)return;
+    s.innerHTML=`<option value="">${placeholder}</option>`+warehouses.map(w=>`<option value="${w.id}">${esc(w.name)}</option>`).join("");
 }
-
 function updateWarehouseSelects(){
-    fillWarehouseSelect("productWarehouse","Depo seçin");
-    fillWarehouseSelect("stockInWarehouse","Depo seçin");
-    fillWarehouseSelect("stockOutWarehouse","Depo seçin");
-    fillWarehouseSelect("transferFromWarehouse","Kaynak depo seçin");
-    fillWarehouseSelect("transferWarehouse","Hedef depo seçin");
+    fillWarehouse("productWarehouse","Depo seçin");
+    fillWarehouse("stockInWarehouse","Depo seçin");
+    fillWarehouse("stockOutWarehouse","Depo seçin");
+    fillWarehouse("transferFromWarehouse","Kaynak depo seçin");
+    fillWarehouse("transferWarehouse","Hedef depo seçin");
 }
 
+/* ÜRÜNLER - KODSIZ */
 function addProduct(){
-    const code=document.getElementById("productCode").value.trim();
     const name=document.getElementById("productName").value.trim();
     const category=document.getElementById("productCategory").value.trim();
     const unit=document.getElementById("productUnit").value;
     const stock=Number(document.getElementById("productStock").value)||0;
     const minStock=Number(document.getElementById("productMinStock").value)||0;
     const warehouseId=Number(document.getElementById("productWarehouse").value);
-
-    if(!code||!name){alert("Ürün kodu ve ürün adı zorunludur.");return;}
-    if(!warehouseId){alert("Lütfen ürünün başlangıç deposunu seçin.");return;}
-    if(products.some(p=>p.code.toLowerCase()===code.toLowerCase())){
-        alert("Bu ürün kodu zaten kayıtlı.");return;
-    }
-
-    const product={
-        id:Date.now(), code, name, category, unit, minStock,
-        warehouseId,
-        stocksByWarehouse:{},
-        stock:0
-    };
-    setWarehouseStock(product,warehouseId,stock);
-    products.push(product);
-
-    if(stock>0) addMovement("Başlangıç",product,stock,warehouseName(warehouseId),"Ürün ilk kayıt sırasında oluşturuldu.");
-    saveData();
-    ["productCode","productName","productCategory","productStock","productMinStock"].forEach(id=>document.getElementById(id).value="");
-    refreshAll();
-    alert("Ürün başarıyla eklendi.");
+    if(!name){alert("Ürün adı zorunludur.");return;}
+    if(!warehouseId){alert("Lütfen depo seçin.");return;}
+    if(products.some(p=>p.name.toLowerCase()===name.toLowerCase())){alert("Bu ürün adı zaten kayıtlı.");return;}
+    const p={id:Date.now(),name,category,unit,minStock,warehouseId,stocksByWarehouse:{},stock:0};
+    setWarehouseStock(p,warehouseId,stock); products.push(p);
+    if(stock>0)addMovement("Başlangıç",p,stock,warehouseName(warehouseId),"İlk stok kaydı");
+    ["productName","productCategory","productStock","productMinStock"].forEach(id=>document.getElementById(id).value="");
+    saveData();refreshAll();alert("Ürün başarıyla eklendi.");
 }
-
+function stockText(p){
+    const x=warehouses.map(w=>{const q=getWarehouseStock(p,w.id);return q>0?`${esc(w.name)}: <strong>${q} ${esc(p.unit)}</strong>`:"";}).filter(Boolean);
+    return x.length?x.join("<br>"):"-";
+}
 function renderProducts(list=products){
-    const table=document.getElementById("productTable");
-    table.innerHTML="";
-    if(!list.length){
-        table.innerHTML='<tr><td colspan="8" class="empty">Henüz ürün bulunmuyor.</td></tr>';return;
-    }
-    list.forEach(p=>{
-        const total=getTotalStock(p);
-        table.innerHTML += `<tr>
-            <td>${escapeHtml(p.code)}</td>
-            <td>${escapeHtml(p.name)}</td>
-            <td>${escapeHtml(p.category||"-")}</td>
-            <td>${escapeHtml(p.unit)}</td>
-            <td><strong>${total}</strong></td>
-            <td>${p.minStock}</td>
-            <td>${formatStockByWarehouse(p)}</td>
-            <td><div class="actions">
-                <button class="small-btn edit" onclick="editProduct(${p.id})">Düzenle</button>
-                <button class="small-btn delete" onclick="deleteProduct(${p.id})">Sil</button>
-            </div></td>
-        </tr>`;
-    });
+    const t=document.getElementById("productTable");if(!t)return;
+    t.innerHTML=list.length?list.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.category||"-")}</td><td>${esc(p.unit)}</td>
+    <td><strong>${getTotalStock(p)}</strong></td><td>${p.minStock}</td><td>${stockText(p)}</td>
+    <td><div class="actions"><button class="small-btn edit" onclick="editProduct(${p.id})">Düzenle</button>
+    <button class="small-btn delete" onclick="deleteProduct(${p.id})">Sil</button></div></td></tr>`).join("")
+    :'<tr><td colspan="7" class="empty">Henüz ürün bulunmuyor.</td></tr>';
 }
-
-function deleteProduct(id){
-    if(confirm("Ürünü silmek istediğinize emin misiniz?")){
-        products=products.filter(p=>p.id!==id);
-        saveData();refreshAll();
-    }
-}
-
+function deleteProduct(id){if(confirm("Ürünü silmek istiyor musunuz?")){products=products.filter(p=>p.id!==id);saveData();refreshAll();}}
 function editProduct(id){
     const p=products.find(x=>x.id===id);if(!p)return;
-    const newName=prompt("Yeni ürün adı:",p.name);if(newName===null)return;
-    const newMin=prompt("Yeni minimum toplam stok:",p.minStock);if(newMin===null)return;
-    p.name=newName.trim()||p.name;
-    p.minStock=Number(newMin)||0;
-    saveData();refreshAll();
+    const n=prompt("Yeni ürün adı:",p.name);if(n===null)return;
+    const m=prompt("Yeni minimum stok:",p.minStock);if(m===null)return;
+    p.name=n.trim()||p.name;p.minStock=Number(m)||0;saveData();refreshAll();
 }
-
 function searchProducts(text){
     text=text.toLowerCase();
-    renderProducts(products.filter(p=>
-        p.name.toLowerCase().includes(text) ||
-        p.code.toLowerCase().includes(text) ||
-        (p.category||"").toLowerCase().includes(text)
-    ));
+    renderProducts(products.filter(p=>p.name.toLowerCase().includes(text)||(p.category||"").toLowerCase().includes(text)));
 }
-
 function updateProductSelects(){
     ["stockInProduct","stockOutProduct","transferProduct"].forEach(id=>{
-        const select=document.getElementById(id);
-        if(!select)return;
-        select.innerHTML='<option value="">Ürün seçin</option>';
-        products.forEach(p=>{
-            select.innerHTML += `<option value="${p.id}">${escapeHtml(p.code)} - ${escapeHtml(p.name)} (Toplam: ${getTotalStock(p)} ${p.unit})</option>`;
-        });
+        const s=document.getElementById(id);if(!s)return;
+        s.innerHTML='<option value="">Ürün seçin</option>'+products.map(p=>`<option value="${p.id}">${esc(p.name)} (Toplam: ${getTotalStock(p)} ${esc(p.unit)})</option>`).join("");
     });
 }
 
+/* STOK */
 function stockIn(){
-    const id=Number(document.getElementById("stockInProduct").value);
-    const warehouseId=Number(document.getElementById("stockInWarehouse").value);
+    const p=products.find(x=>x.id===Number(document.getElementById("stockInProduct").value));
+    const wid=Number(document.getElementById("stockInWarehouse").value);
     const amount=Number(document.getElementById("stockInAmount").value);
     const note=document.getElementById("stockInNote").value.trim();
-
-    if(!id||!warehouseId||amount<=0){
-        alert("Ürün, depo ve geçerli miktar seçin.");return;
-    }
-    const p=products.find(x=>x.id===id);
-    setWarehouseStock(p,warehouseId,getWarehouseStock(p,warehouseId)+amount);
-    addMovement("Giriş",p,amount,warehouseName(warehouseId),note);
-    saveData();
-    document.getElementById("stockInAmount").value="";
-    document.getElementById("stockInNote").value="";
-    refreshAll();
-    alert(`${amount} ${p.unit} stok girişi yapıldı.`);
+    if(!p||!wid||amount<=0){alert("Ürün, depo ve miktarı seçin.");return;}
+    setWarehouseStock(p,wid,getWarehouseStock(p,wid)+amount);
+    addMovement("Giriş",p,amount,warehouseName(wid),note);
+    document.getElementById("stockInAmount").value="";document.getElementById("stockInNote").value="";
+    saveData();refreshAll();alert("Stok girişi yapıldı.");
 }
-
 function stockOut(){
-    const id=Number(document.getElementById("stockOutProduct").value);
-    const warehouseId=Number(document.getElementById("stockOutWarehouse").value);
+    const p=products.find(x=>x.id===Number(document.getElementById("stockOutProduct").value));
+    const wid=Number(document.getElementById("stockOutWarehouse").value);
     const amount=Number(document.getElementById("stockOutAmount").value);
     const note=document.getElementById("stockOutNote").value.trim();
-
-    if(!id||!warehouseId||amount<=0){
-        alert("Ürün, depo ve geçerli miktar seçin.");return;
-    }
-    const p=products.find(x=>x.id===id);
-    const available=getWarehouseStock(p,warehouseId);
-    if(available<amount){
-        alert(`Yetersiz stok! ${warehouseName(warehouseId)} deposunda mevcut: ${available} ${p.unit}`);return;
-    }
-    setWarehouseStock(p,warehouseId,available-amount);
-    addMovement("Çıkış",p,amount,warehouseName(warehouseId),note);
-    saveData();
-    document.getElementById("stockOutAmount").value="";
-    document.getElementById("stockOutNote").value="";
-    refreshAll();
-    alert(`${amount} ${p.unit} stoktan düşüldü.`);
+    if(!p||!wid||amount<=0){alert("Ürün, depo ve miktarı seçin.");return;}
+    const available=getWarehouseStock(p,wid);
+    if(available<amount){alert(`Bu depoda yeterli stok yok. Mevcut: ${available} ${p.unit}`);return;}
+    setWarehouseStock(p,wid,available-amount);addMovement("Çıkış",p,amount,warehouseName(wid),note);
+    document.getElementById("stockOutAmount").value="";document.getElementById("stockOutNote").value="";
+    saveData();refreshAll();alert("Stok çıkışı yapıldı.");
 }
-
 function transferStock(){
-    const productId=Number(document.getElementById("transferProduct").value);
-    const fromId=Number(document.getElementById("transferFromWarehouse").value);
-    const toId=Number(document.getElementById("transferWarehouse").value);
+    const p=products.find(x=>x.id===Number(document.getElementById("transferProduct").value));
+    const from=Number(document.getElementById("transferFromWarehouse").value);
+    const to=Number(document.getElementById("transferWarehouse").value);
     const amount=Number(document.getElementById("transferAmount").value);
     const note=document.getElementById("transferNote").value.trim();
-
-    if(!productId||!fromId||!toId||amount<=0){
-        alert("Lütfen ürün, kaynak depo, hedef depo ve miktarı doldurun.");return;
-    }
-    if(fromId===toId){
-        alert("Kaynak ve hedef depo aynı olamaz.");return;
-    }
-
-    const p=products.find(x=>x.id===productId);
-    const available=getWarehouseStock(p,fromId);
-    if(available<amount){
-        alert(`Kaynak depoda yeterli stok yok. Mevcut: ${available} ${p.unit}`);return;
-    }
-
-    setWarehouseStock(p,fromId,available-amount);
-    setWarehouseStock(p,toId,getWarehouseStock(p,toId)+amount);
-
-    addMovement("Transfer",p,amount,
-        `${warehouseName(fromId)} → ${warehouseName(toId)}`,note,"Depo bazlı transfer"
-    );
-
-    saveData();
-    document.getElementById("transferAmount").value="";
-    document.getElementById("transferNote").value="";
-    refreshAll();
-    alert(`${amount} ${p.unit} başarıyla transfer edildi.`);
+    if(!p||!from||!to||amount<=0){alert("Tüm alanları doldurun.");return;}
+    if(from===to){alert("Kaynak ve hedef depo aynı olamaz.");return;}
+    if(getWarehouseStock(p,from)<amount){alert("Kaynak depoda yeterli stok yok.");return;}
+    setWarehouseStock(p,from,getWarehouseStock(p,from)-amount);
+    setWarehouseStock(p,to,getWarehouseStock(p,to)+amount);
+    addMovement("Transfer",p,amount,`${warehouseName(from)} → ${warehouseName(to)}`,note);
+    document.getElementById("transferAmount").value="";document.getElementById("transferNote").value="";
+    saveData();refreshAll();alert("Transfer tamamlandı.");
 }
 
-function movementBadge(type){
-    if(type==="Giriş")return '<span class="badge badge-in">📥 Stok Girişi</span>';
-    if(type==="Çıkış")return '<span class="badge badge-out">📤 Stok Çıkışı</span>';
-    if(type==="Transfer")return '<span class="badge badge-transfer">🔄 Transfer</span>';
-    return '<span class="badge badge-start">➕ Başlangıç</span>';
+/* HAREKETLER */
+function badge(type){
+    return type==="Giriş"?'<span class="badge badge-in">📥 Stok Girişi</span>':
+           type==="Çıkış"?'<span class="badge badge-out">📤 Stok Çıkışı</span>':
+           type==="Transfer"?'<span class="badge badge-transfer">🔄 Transfer</span>':
+           '<span class="badge badge-start">➕ Başlangıç</span>';
 }
-
 function renderMovements(){
-    const table=document.getElementById("movementTable");if(!table)return;
+    const t=document.getElementById("movementTable");if(!t)return;
     const search=(document.getElementById("movementSearch")?.value||"").toLowerCase();
     const type=document.getElementById("movementTypeFilter")?.value||"";
-
-    const list=movements.filter(m=>{
-        const haystack=`${m.productCode} ${m.productName} ${m.note} ${m.warehouse}`.toLowerCase();
-        return (!search||haystack.includes(search))&&(!type||m.type===type);
-    });
-
-    table.innerHTML="";
-    if(!list.length){
-        table.innerHTML='<tr><td colspan="6" class="empty">Henüz stok hareketi bulunmuyor.</td></tr>';return;
-    }
-
-    list.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).forEach(m=>{
-        const sign=m.type==="Çıkış"?"−":m.type==="Transfer"?"↔":"+";
-        table.innerHTML += `<tr>
-            <td>${escapeHtml(m.date)}</td>
-            <td>${movementBadge(m.type)}</td>
-            <td><strong>${escapeHtml(m.productCode)}</strong><br><small>${escapeHtml(m.productName)}</small></td>
-            <td>${sign}${m.amount} ${escapeHtml(m.unit)}</td>
-            <td>${escapeHtml(m.warehouse)}</td>
-            <td>${escapeHtml(m.note||"-")}</td>
-        </tr>`;
-    });
+    const list=movements.filter(m=>{const h=`${m.productName} ${m.note} ${m.warehouse}`.toLowerCase();return(!search||h.includes(search))&&(!type||m.type===type);})
+    .sort((a,b)=>b.timestamp-a.timestamp);
+    t.innerHTML=list.length?list.map(m=>`<tr><td>${esc(m.date)}</td><td>${badge(m.type)}</td><td><strong>${esc(m.productName)}</strong></td>
+    <td>${m.type==="Çıkış"?"−":"+"}${m.amount} ${esc(m.unit)}</td><td>${esc(m.warehouse)}</td><td>${esc(m.note||"-")}</td></tr>`).join("")
+    :'<tr><td colspan="6" class="empty">Henüz stok hareketi bulunmuyor.</td></tr>';
 }
+function clearMovementHistory(){if(confirm("Tüm stok hareketlerini silmek istiyor musunuz?")){movements=[];saveData();refreshAll();}}
 
-function clearMovementHistory(){
-    if(!movements.length){alert("Temizlenecek hareket kaydı yok.");return;}
-    if(confirm("Tüm stok hareket geçmişini silmek istediğinize emin misiniz?")){
-        movements=[];saveData();refreshAll();
-    }
+/* SİPARİŞLER */
+function addOrder(){
+    const customer=document.getElementById("orderCustomer").value.trim();
+    const product=document.getElementById("orderProduct").value.trim();
+    const quantity=Number(document.getElementById("orderQuantity").value);
+    const unit=document.getElementById("orderUnit").value;
+    const deliveryDate=document.getElementById("orderDeliveryDate").value;
+    const color=document.getElementById("orderColor").value.trim();
+    const profile=document.getElementById("orderProfile").value;
+    const claw=document.getElementById("orderClaw").value;
+    const status=document.getElementById("orderStatus").value;
+    const note=document.getElementById("orderNote").value.trim();
+
+    if(!customer||!product||quantity<=0||!deliveryDate){alert("Müşteri, ürün, miktar ve teslim tarihi zorunludur.");return;}
+
+    orders.push({id:Date.now(),createdAt:Date.now(),createdDate:new Date().toLocaleDateString("tr-TR"),
+        customer,product,quantity,unit,deliveryDate,color,profile,claw,status,note});
+
+    ["orderCustomer","orderProduct","orderQuantity","orderDeliveryDate","orderColor","orderNote"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("orderProfile").value="";
+    document.getElementById("orderClaw").value="";
+    document.getElementById("orderStatus").value="Bekliyor";
+    saveData();refreshAll();alert("Sipariş başarıyla oluşturuldu.");
 }
+function formatDate(d){if(!d)return "-";const [y,m,day]=d.split("-");return `${day}.${m}.${y}`;}
+function orderStatusSelect(o){
+    return `<select onchange="changeOrderStatus(${o.id},this.value)">
+        ${["Bekliyor","Üretimde","Hazır","Teslim Edildi"].map(s=>`<option ${o.status===s?"selected":""}>${s}</option>`).join("")}
+    </select>`;
+}
+function renderOrders(list=orders){
+    const t=document.getElementById("orderTable");if(!t)return;
+    t.innerHTML=list.length?list.sort((a,b)=>b.createdAt-a.createdAt).map(o=>{
+        const details=[o.color&&`Renk: ${esc(o.color)}`,o.profile&&esc(o.profile),o.claw&&esc(o.claw),o.note&&`Not: ${esc(o.note)}`].filter(Boolean).join("<br>")||"-";
+        return `<tr><td>${esc(o.createdDate)}</td><td><strong>${esc(o.customer)}</strong></td><td>${esc(o.product)}</td>
+        <td>${o.quantity} ${esc(o.unit)}</td><td>${details}</td><td>${formatDate(o.deliveryDate)}</td>
+        <td>${orderStatusSelect(o)}</td><td><button class="small-btn delete" onclick="deleteOrder(${o.id})">Sil</button></td></tr>`;
+    }).join(""):'<tr><td colspan="8" class="empty">Henüz sipariş bulunmuyor.</td></tr>';
 
+    document.getElementById("totalOrders").textContent=orders.length;
+    document.getElementById("pendingOrders").textContent=orders.filter(o=>o.status==="Bekliyor").length;
+    document.getElementById("productionOrders").textContent=orders.filter(o=>o.status==="Üretimde").length;
+    document.getElementById("deliveredOrders").textContent=orders.filter(o=>o.status==="Teslim Edildi").length;
+}
+function searchOrders(text){
+    text=text.toLowerCase();
+    renderOrders(orders.filter(o=>o.customer.toLowerCase().includes(text)||o.product.toLowerCase().includes(text)));
+}
+function changeOrderStatus(id,status){const o=orders.find(x=>x.id===id);if(o){o.status=status;saveData();refreshAll();}}
+function deleteOrder(id){if(confirm("Siparişi silmek istiyor musunuz?")){orders=orders.filter(o=>o.id!==id);saveData();refreshAll();}}
+
+/* DASHBOARD / RAPOR */
 function renderDashboard(){
     document.getElementById("totalProducts").textContent=products.length;
     document.getElementById("totalStock").textContent=products.reduce((s,p)=>s+getTotalStock(p),0);
     document.getElementById("totalWarehouses").textContent=warehouses.length;
-
     const critical=products.filter(p=>getTotalStock(p)<=Number(p.minStock||0));
     document.getElementById("criticalStock").textContent=critical.length;
-
-    const table=document.getElementById("dashboardStockTable");
-    table.innerHTML="";
-    if(!products.length){
-        table.innerHTML='<tr><td colspan="7" class="empty">Henüz ürün bulunmuyor.</td></tr>';return;
-    }
-
-    products.forEach(p=>{
-        const total=getTotalStock(p);
-        const c=total<=Number(p.minStock||0);
-        table.innerHTML += `<tr>
-            <td>${escapeHtml(p.code)}</td>
-            <td>${escapeHtml(p.name)}</td>
-            <td>${escapeHtml(p.category||"-")}</td>
-            <td>${escapeHtml(p.unit)}</td>
-            <td><strong>${total}</strong></td>
-            <td>${formatStockByWarehouse(p)}</td>
-            <td class="${c?"status-critical":"status-good"}">${c?"⚠ Kritik":"✓ Yeterli"}</td>
-        </tr>`;
-    });
+    const t=document.getElementById("dashboardStockTable");if(!t)return;
+    t.innerHTML=products.length?products.map(p=>{const q=getTotalStock(p),c=q<=Number(p.minStock||0);return `<tr>
+        <td>${esc(p.name)}</td><td>${esc(p.category||"-")}</td><td>${esc(p.unit)}</td><td><strong>${q}</strong></td>
+        <td>${stockText(p)}</td><td class="${c?"status-critical":"status-good"}">${c?"⚠ Kritik":"✓ Yeterli"}</td></tr>`;}).join("")
+        :'<tr><td colspan="6" class="empty">Henüz ürün bulunmuyor.</td></tr>';
 }
-
 function renderReports(){
     document.getElementById("reportProducts").textContent=products.length;
     document.getElementById("reportStock").textContent=products.reduce((s,p)=>s+getTotalStock(p),0);
-
     const critical=products.filter(p=>getTotalStock(p)<=Number(p.minStock||0));
     document.getElementById("reportCritical").textContent=critical.length;
-
-    const table=document.getElementById("criticalTable");
-    table.innerHTML="";
-    if(!critical.length){
-        table.innerHTML='<tr><td colspan="4" class="empty">🎉 Kritik stokta ürün bulunmuyor.</td></tr>';return;
-    }
-
-    critical.forEach(p=>{
-        table.innerHTML += `<tr>
-            <td>${escapeHtml(p.code)}</td>
-            <td>${escapeHtml(p.name)}</td>
-            <td class="status-critical">${getTotalStock(p)}</td>
-            <td>${p.minStock}</td>
-        </tr>`;
-    });
+    const t=document.getElementById("criticalTable");if(!t)return;
+    t.innerHTML=critical.length?critical.map(p=>`<tr><td>${esc(p.name)}</td><td class="status-critical">${getTotalStock(p)}</td><td>${p.minStock}</td></tr>`).join("")
+    :'<tr><td colspan="3" class="empty">🎉 Kritik stokta ürün bulunmuyor.</td></tr>';
 }
-
 function refreshAll(){
-    migrateProducts();
-    updateWarehouseSelects();
-    updateProductSelects();
-    renderWarehouses();
-    renderProducts();
-    renderDashboard();
-    renderReports();
-    renderMovements();
-    saveData();
+    updateWarehouseSelects();updateProductSelects();renderWarehouses();renderProducts();renderDashboard();renderReports();renderMovements();renderOrders();saveData();
 }
-
-migrateProducts();
-refreshAll();
+migrateData();refreshAll();
 </script>
+
 </body>
 </html>
