@@ -692,16 +692,97 @@ function renderReports(){
 function refreshAll(){
     updateWarehouseSelects();updateProductSelects();renderWarehouses();renderProducts();renderDashboard();renderReports();renderMovements();renderOrders();saveData();
 }
-migrateData();migrateOrders();
-saveUsers();
-if(currentUser){
-    document.getElementById("loginOverlay").style.display="none";
-    applyUserPermissions();
-}else{
-    document.getElementById("loginOverlay").style.display="flex";
-}
-refreshAll();
 
+
+
+
+/* ===== KULLANICI ALTYAPISI ===== */
+let currentUser = JSON.parse(sessionStorage.getItem("plastvitCurrentUser") || "null");
+
+function roleName(role){
+    if(role==="admin") return "Yönetici";
+    if(role==="warehouse") return "Depo Sorumlusu";
+    if(role==="production") return "Üretim Sorumlusu";
+    return "Kullanıcı";
+}
+
+function canApproveOrders(){
+    return currentUser && (currentUser.role==="admin" || currentUser.role==="warehouse");
+}
+
+function applyUserPermissions(){
+    if(!currentUser) return;
+
+    const hu=document.getElementById("headerUser");
+    const hr=document.getElementById("headerRole");
+    if(hu) hu.textContent="👤 "+currentUser.name;
+    if(hr) hr.textContent=roleName(currentUser.role);
+
+    document.querySelectorAll(".menu-item").forEach(btn=>{
+        const text=btn.textContent.toLowerCase();
+
+        if(currentUser.role==="admin"){
+            btn.style.display="";
+        } else if(currentUser.role==="warehouse"){
+            btn.style.display="";
+        } else if(currentUser.role==="production"){
+            if(text.includes("depolar") || text.includes("transfer")) btn.style.display="none";
+            else btn.style.display="";
+        }
+    });
+}
+
+function createNotification(userId,message){
+    const notifications=JSON.parse(localStorage.getItem("plastvitNotifications")||"[]");
+    notifications.push({
+        id:Date.now()+Math.floor(Math.random()*1000),
+        userId:userId,
+        message:message,
+        createdAt:new Date().toLocaleString("tr-TR"),
+        read:false
+    });
+    localStorage.setItem("plastvitNotifications",JSON.stringify(notifications));
+}
+
+function getNotifications(){
+    if(!currentUser) return [];
+    return (JSON.parse(localStorage.getItem("plastvitNotifications")||"[]"))
+        .filter(n=>n.userId===currentUser.id)
+        .sort((a,b)=>b.id-a.id);
+}
+
+function updateNotificationUI(){
+    const badge=document.getElementById("notifyCount");
+    if(!badge || !currentUser) return;
+    const unread=getNotifications().filter(n=>!n.read).length;
+    badge.textContent=unread;
+    badge.style.display=unread?"flex":"none";
+}
+
+function renderNotifications(){
+    const list=document.getElementById("notificationList");
+    if(!list) return;
+    const items=getNotifications();
+
+    list.innerHTML=items.length
+        ? items.map(n=>`<div class="notification-item ${n.read?'':'unread'}">
+            <div>${esc(n.message)}</div>
+            <div class="notification-time">${esc(n.createdAt)}</div>
+          </div>`).join("")
+        : '<div class="empty">Bildirim bulunmuyor.</div>';
+
+    let all=JSON.parse(localStorage.getItem("plastvitNotifications")||"[]");
+    all=all.map(n=>currentUser && n.userId===currentUser.id ? {...n,read:true}:n);
+    localStorage.setItem("plastvitNotifications",JSON.stringify(all));
+    updateNotificationUI();
+}
+
+function toggleNotifications(){
+    const panel=document.getElementById("notificationPanel");
+    if(!panel) return;
+    panel.classList.toggle("show");
+    renderNotifications();
+}
 
 /* ===== SAĞLAM GİRİŞ DÜZELTMESİ ===== */
 const LOGIN_USERS = [
@@ -776,6 +857,19 @@ window.addEventListener("load", function(){
     }
 });
 
+
+try {
+    if(currentUser){
+        document.getElementById("loginOverlay").style.display="none";
+        applyUserPermissions();
+        updateNotificationUI();
+    } else {
+        document.getElementById("loginOverlay").style.display="flex";
+    }
+    refreshAll();
+} catch(e) {
+    console.error("Başlangıç hatası:", e);
+}
 </script>
 
 </body>
